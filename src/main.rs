@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate clap;
+extern crate scout;
+use scout::testmod;
 use clap::App;
 use std::path;
 use std::env;
@@ -8,8 +10,14 @@ use std::env;
 /// # goal
 /// manage file by tagging
 /// search doc by query and tag
+///
+/// # data storing
+/// will store data to plain txt as json, xml or so on.
+/// tag is stored to separated file.
 
 fn main() {
+    testmod::test();
+
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml)
         .name(crate_name!())
