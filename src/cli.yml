@@ -1,0 +1,16 @@
+name: scout
+version: "0.1"
+author: tkgsy
+about: doc path manager
+subcommands:
+  - add:
+      about: Add new path
+      args:
+        - INPUT:
+            help: Sets path to doc
+            required: true
+            index: 1
+        - tags:
+            short: t
+            help: Tags doc with arg-vals
+            takes_value: true
