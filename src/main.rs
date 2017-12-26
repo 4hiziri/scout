@@ -11,10 +11,15 @@ use std::env;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml).get_matches();
+    let matches = App::from_yaml(yaml)
+        .name(crate_name!())
+        .version(crate_version!())
+        .about(crate_description!())
+        .author(crate_authors!())
+        .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("add") {
-        let input = matches.value_of("INPUT").unwrap();
+        let input = matches.value_of("PATH").unwrap();
 
         println!("input is {}", input);
 
