@@ -4,7 +4,8 @@ extern crate rustc_serialize;
 extern crate scout;
 use scout::testmod;
 use clap::App;
-use std::path;
+use rustc_serialize::json;
+use std::path::PathBuf;
 use std::env;
 
 /// scout - doc management tool
@@ -16,6 +17,22 @@ use std::env;
 /// will store data to plain txt as json, xml or so on.
 /// tag is stored to separated file.
 /// revese reference
+
+struct PathEntry {
+    path: PathBuf,
+    tags: Vec<String>,
+}
+
+fn get_env_var() -> Option<String> {
+    let env_vars = env::vars();
+
+    match env_vars.filter(|x| x.1 == "SCOUT_PATH").next() {
+        Some((_, var)) => Some(var),
+        None => None,
+    }
+}
+
+fn add_path(path: String, tags: Vec<String>) {}
 
 fn main() {
     testmod::test();
