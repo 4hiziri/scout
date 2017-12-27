@@ -23,16 +23,18 @@ struct PathEntry {
     tags: Vec<String>,
 }
 
-fn get_env_var() -> Option<String> {
+fn get_env_var() -> Option<PathBuf> {
     let env_vars = env::vars();
 
     match env_vars.filter(|x| x.1 == "SCOUT_PATH").next() {
-        Some((_, var)) => Some(var),
+        Some((_, var)) => Some(PathBuf::from(var)),
         None => None,
     }
 }
 
-fn add_path(path: String, tags: Vec<String>) {}
+fn add_path(path: String, tags: Vec<String>) {
+    let path = get_env_var().unwrap_or(env::home_dir().unwrap());
+}
 
 fn main() {
     testmod::test();
