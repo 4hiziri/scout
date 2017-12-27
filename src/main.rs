@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate rustc_serialize;
 extern crate scout;
 use scout::testmod;
 use clap::App;
@@ -14,6 +15,7 @@ use std::env;
 /// # data storing
 /// will store data to plain txt as json, xml or so on.
 /// tag is stored to separated file.
+/// revese reference
 
 fn main() {
     testmod::test();
