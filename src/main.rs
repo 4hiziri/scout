@@ -5,10 +5,11 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 use clap::App;
-// use rustc_serialize::json;
+use rustc_serialize::json;
 use std::path::{PathBuf, Path};
 use std::env;
 use std::fs::File;
+use std::io::{BufReader, Read};
 
 /// scout - doc management tool
 /// # goal
@@ -19,7 +20,7 @@ use std::fs::File;
 /// will store data to plain txt as json, xml or so on.
 /// tag is stored to separated file.
 /// revese reference
-
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 struct PathEntry {
     path: PathBuf,
     tags: Vec<String>,
@@ -61,20 +62,42 @@ fn ensure_dir(path: &Path) -> Result<(), String> {
     }
 }
 
-fn add_path(_file_path: String, _tags: Vec<String>) {
-    let _path_entries: Vec<PathEntry> = Vec::new();
+fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
+    let mut buf = String::new();
+
+    // TODO: is this readable?
+    File::open(path)
+        .map_err(|_| "failed opening file".to_owned())
+        .and_then(|f| Ok(BufReader::new(f)))
+        .and_then(|mut r| {
+            r.read_to_string(&mut buf).map_err(|_| {
+                "failed reading file".to_owned()
+            })
+        })
+        .and_then(|_| {
+            json::decode::<Vec<PathEntry>>(&buf).map_err(|_| "parse error".to_owned())
+        })
+
+}
+
+fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
     let mut store_path = get_store_path();
-    ensure_dir(store_path.as_path()).unwrap();
+    ensure_dir(store_path.as_path()).unwrap(); // TODO: error check
     store_path.push("pathes.json");
-    let store_path = store_path;
-    println!("{:?}", &store_path);
-    // FIX: if .scout doesn't exist, create_dir
-    let _pathes_file = if !store_path.exists() {
-        // TODO: error handling
-        File::create(store_path).unwrap()
-    } else {
-        File::open(store_path).unwrap()
-    };
+
+    let store_path = store_path.as_path();
+    debug!("{:?}", &store_path);
+
+    // if store file doesn't exist, create it here.
+    if !store_path.exists() {
+        File::create(store_path).unwrap();
+    }
+
+    let pathes = read_path_entries(store_path).unwrap();
+    debug!("{:?}", pathes);
+
+
+    Err("Not implemented yet!".to_owned())
 }
 
 fn main() {
@@ -100,6 +123,6 @@ fn main() {
             println!("tags is {}", tags);
         }
 
-        add_path(input.to_string(), Vec::new());
+        add_path(input.to_string(), Vec::new()).unwrap();
     }
 }
