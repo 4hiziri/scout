@@ -1,13 +1,13 @@
 #[macro_use]
+#[allow(unused_imports)]
 extern crate clap;
 extern crate rustc_serialize;
-extern crate scout;
-use scout::testmod;
 use clap::App;
-use rustc_serialize::json;
-use std::path::PathBuf;
+// use rustc_serialize::json;
+use std::path::{PathBuf, Path};
 use std::env;
 use std::fs::File;
+use std::io;
 
 /// scout - doc management tool
 /// # goal
@@ -44,14 +44,30 @@ fn get_store_path() -> PathBuf {
     }
 }
 
-fn add_path(file_path: String, tags: Vec<String>) {
-    let mut path_entries: Vec<PathEntry> = Vec::new();
+fn ensure_dir(path: &Path) -> Result<(), String> {
+    use std::fs;
+
+    if path.exists() {
+        Ok(())
+    } else {
+        match fs::create_dir_all(path) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(format!(
+                "Failed create {}",
+                path.to_str().unwrap_or("__missing__")
+            )),
+        }
+    }
+}
+
+fn add_path(_file_path: String, _tags: Vec<String>) {
+    let _path_entries: Vec<PathEntry> = Vec::new();
     let mut store_path = get_store_path();
     store_path.push("pathes.json");
     let store_path = store_path;
     println!("{:?}", &store_path);
-    // FIX: if .scout doesn't exist, create_dirx
-    let mut pathes_file = if !store_path.exists() {
+    // FIX: if .scout doesn't exist, create_dir
+    let _pathes_file = if !store_path.exists() {
         // TODO: error handling
         File::create(store_path).unwrap()
     } else {
@@ -60,8 +76,6 @@ fn add_path(file_path: String, tags: Vec<String>) {
 }
 
 fn main() {
-    testmod::test();
-
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml)
         .name(crate_name!())
