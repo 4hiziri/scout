@@ -1,13 +1,14 @@
 #[macro_use]
-#[allow(unused_imports)]
 extern crate clap;
 extern crate rustc_serialize;
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 use clap::App;
 // use rustc_serialize::json;
 use std::path::{PathBuf, Path};
 use std::env;
 use std::fs::File;
-use std::io;
 
 /// scout - doc management tool
 /// # goal
@@ -25,9 +26,9 @@ struct PathEntry {
 }
 
 fn get_env_var() -> Option<PathBuf> {
-    let env_vars = env::vars();
+    let env_key: String = "SCOUT_PATH".to_owned();
 
-    match env_vars.filter(|x| x.1 == "SCOUT_PATH").next() {
+    match env::vars().find(|x| x.0 == "SCOUT_PATH") {
         Some((_, var)) => Some(PathBuf::from(var)),
         None => None,
     }
@@ -47,7 +48,7 @@ fn get_store_path() -> PathBuf {
 fn ensure_dir(path: &Path) -> Result<(), String> {
     use std::fs;
 
-    if path.exists() {
+    if path.is_dir() && path.exists() {
         Ok(())
     } else {
         match fs::create_dir_all(path) {
@@ -63,6 +64,7 @@ fn ensure_dir(path: &Path) -> Result<(), String> {
 fn add_path(_file_path: String, _tags: Vec<String>) {
     let _path_entries: Vec<PathEntry> = Vec::new();
     let mut store_path = get_store_path();
+    ensure_dir(store_path.as_path()).unwrap();
     store_path.push("pathes.json");
     let store_path = store_path;
     println!("{:?}", &store_path);
@@ -76,6 +78,8 @@ fn add_path(_file_path: String, _tags: Vec<String>) {
 }
 
 fn main() {
+    env_logger::init().unwrap();
+
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml)
         .name(crate_name!())
