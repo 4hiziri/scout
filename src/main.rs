@@ -79,7 +79,7 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
 fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
     // get worknig directory path
     let mut store_path = try!(get_store_path());
-    try!(ensure_dir(store_path.as_path()))
+    try!(ensure_dir(store_path.as_path()));
     store_path.push("pathes.json");
 
     let store_path = store_path.as_path(); // remove mutability
@@ -87,7 +87,9 @@ fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
 
     // if store file doesn't exist, create it here.
     if !store_path.exists() {
-        File::create(store_path).unwrap();
+        try!(File::create(store_path).map_err(|_| {
+            "failed creating file".to_owned()
+        }));
     }
 
     let pathes = read_path_entries(store_path).unwrap();
