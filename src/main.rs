@@ -8,6 +8,7 @@ use clap::App;
 use rustc_serialize::json;
 use std::path::{PathBuf, Path};
 use std::env;
+use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
@@ -27,9 +28,9 @@ struct PathEntry {
 }
 
 fn get_env_var() -> Option<PathBuf> {
-    let env_key: String = "SCOUT_PATH".to_owned();
+    let env_key = "SCOUT_PATH";
 
-    match env::vars().find(|x| x.0 == "SCOUT_PATH") {
+    match env::vars().find(|x| x.0 == env_key) {
         Some((_, var)) => Some(PathBuf::from(var)),
         None => None,
     }
@@ -47,8 +48,6 @@ fn get_store_path() -> Result<PathBuf, String> {
 }
 
 fn ensure_dir(path: &Path) -> Result<(), String> {
-    use std::fs;
-
     if path.is_dir() && path.exists() {
         Ok(())
     } else {
@@ -64,7 +63,7 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
     // TODO: is this readable?
     File::open(path)
         .map_err(|_| "failed opening file".to_owned())
-        .and_then(|f| Ok(BufReader::new(f)))
+        .and_then(|f| Ok(BufReader::new(f))) // FIXME: early return?
         .and_then(|mut r| {
             r.read_to_string(&mut buf).map_err(|_| {
                 "failed reading file".to_owned()
@@ -92,9 +91,8 @@ fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
         }));
     }
 
-    let pathes = read_path_entries(store_path).unwrap();
+    let pathes = try!(read_path_entries(store_path));
     debug!("{:?}", pathes);
-
 
     Err("Not implemented yet!".to_owned())
 }
