@@ -87,7 +87,7 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
 
 }
 
-fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
+fn add_path(entry: PathEntry) -> Result<(), String> {
     // get worknig directory path
     let mut store_path = try!(get_store_path());
     try!(ensure_dir(store_path.as_path()));
@@ -134,7 +134,9 @@ fn main() {
             println!("tags is {}", tags);
         }
 
-        match add_path(input.to_string(), Vec::new()) {
+        let entry = PathEntry::new(input.to_string(), Vec::new());
+
+        match add_path(entry) {
             Ok(_) => println!("Add path!"),
             Err(s) => println!("Failed!: {}", s),
         }
