@@ -35,15 +35,15 @@ fn get_env_var() -> Option<PathBuf> {
     }
 }
 
-fn get_store_path() -> PathBuf {
-    match get_env_var() {
-        Some(path) => path,
-        None => {
-            let mut tmp = env::home_dir().unwrap();
-            tmp.push(".scout");
-            tmp
-        }
-    }
+fn get_store_path() -> Result<PathBuf, String> {
+    let default = env::home_dir()
+        .ok_or("$HOME doesn't exists!".to_owned())
+        .and_then(|mut path| {
+            path.push(".scout");
+            Ok(path)
+        });
+
+    get_env_var().map_or(default, |path| Ok(path))
 }
 
 fn ensure_dir(path: &Path) -> Result<(), String> {
@@ -52,13 +52,9 @@ fn ensure_dir(path: &Path) -> Result<(), String> {
     if path.is_dir() && path.exists() {
         Ok(())
     } else {
-        match fs::create_dir_all(path) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(format!(
-                "Failed create {}",
-                path.to_str().unwrap_or("__missing__")
-            )),
-        }
+        fs::create_dir_all(path).and_then(|_| Ok(())).map_err(|_| {
+            format!("Failed create {}", path.to_str().unwrap_or("__missing__"))
+        })
     }
 }
 
@@ -81,11 +77,12 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
 }
 
 fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
-    let mut store_path = get_store_path();
-    ensure_dir(store_path.as_path()).unwrap(); // TODO: error check
+    // get worknig directory path
+    let mut store_path = try!(get_store_path());
+    try!(ensure_dir(store_path.as_path()))
     store_path.push("pathes.json");
 
-    let store_path = store_path.as_path();
+    let store_path = store_path.as_path(); // remove mutability
     debug!("{:?}", &store_path);
 
     // if store file doesn't exist, create it here.
