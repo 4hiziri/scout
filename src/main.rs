@@ -27,13 +27,21 @@ struct PathEntry {
     tags: Vec<String>,
 }
 
+impl PathEntry {
+    fn new(path: String, tags: Vec<String>) -> PathEntry {
+        PathEntry {
+            path: PathBuf::from(path),
+            tags: tags.clone(),
+        }
+    }
+}
+
 fn get_env_var() -> Option<PathBuf> {
     let env_key = "SCOUT_PATH";
 
-    match env::vars().find(|x| x.0 == env_key) {
-        Some((_, var)) => Some(PathBuf::from(var)),
-        None => None,
-    }
+    env::vars().find(|x| x.0 == env_key).map(|(_, val)| {
+        PathBuf::from(val)
+    })
 }
 
 fn get_store_path() -> Result<PathBuf, String> {
@@ -70,7 +78,11 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
             })
         })
         .and_then(|_| {
-            json::decode::<Vec<PathEntry>>(&buf).map_err(|_| "parse error".to_owned())
+            if buf.is_empty() {
+                Ok(Vec::new())
+            } else {
+                json::decode::<Vec<PathEntry>>(&buf).map_err(|_| "parse error".to_owned())
+            }
         })
 
 }
@@ -93,6 +105,8 @@ fn add_path(_file_path: String, _tags: Vec<String>) -> Result<(), String> {
 
     let pathes = try!(read_path_entries(store_path));
     debug!("{:?}", pathes);
+
+
 
     Err("Not implemented yet!".to_owned())
 }
@@ -120,6 +134,9 @@ fn main() {
             println!("tags is {}", tags);
         }
 
-        add_path(input.to_string(), Vec::new()).unwrap();
+        match add_path(input.to_string(), Vec::new()) {
+            Ok(_) => println!("Add path!"),
+            Err(s) => println!("Failed!: {}", s),
+        }
     }
 }
