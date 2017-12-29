@@ -10,7 +10,7 @@ use std::path::{PathBuf, Path};
 use std::env;
 use std::fs;
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufWriter, BufReader, Write, Read};
 
 /// scout - doc management tool
 /// # goal
@@ -65,11 +65,11 @@ fn ensure_dir(path: &Path) -> Result<(), String> {
     }
 }
 
-fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
+fn read_path_entries(src: &Path) -> Result<Vec<PathEntry>, String> {
     let mut buf = String::new();
 
     // TODO: is this readable?
-    File::open(path)
+    File::open(src)
         .map_err(|_| "failed opening file".to_owned())
         .and_then(|f| Ok(BufReader::new(f))) // FIXME: early return?
         .and_then(|mut r| {
@@ -85,6 +85,17 @@ fn read_path_entries(path: &Path) -> Result<Vec<PathEntry>, String> {
             }
         })
 
+}
+
+fn write_path_entries(dst: &Path, entries: &Vec<PathEntry>) -> Result<(), String> {
+    let payload = try!(json::encode(entries).map_err(|_| "parse error".to_owned()));
+
+    File::create(dst)
+        .map_err(|_| "failed creating file".to_owned())
+        .and_then(|f| Ok(BufWriter::new(f)))
+        .and_then(|mut w| {
+            write!(w, "{}", payload).map_err(|_| "write error".to_owned())
+        })
 }
 
 fn add_path(entry: PathEntry) -> Result<(), String> {
@@ -103,12 +114,17 @@ fn add_path(entry: PathEntry) -> Result<(), String> {
         }));
     }
 
-    let pathes = try!(read_path_entries(store_path));
+    let mut pathes = try!(read_path_entries(store_path));
     debug!("{:?}", pathes);
 
+    try!(match pathes.iter().find(|e| e.path == entry.path) {
+        Some(_) => Err("path exists!"),
+        None => Ok(()),
+    });
 
+    pathes.push(entry);
 
-    Err("Not implemented yet!".to_owned())
+    write_path_entries(store_path, &pathes)
 }
 
 fn main() {
