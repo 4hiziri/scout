@@ -9,7 +9,9 @@ subcommands:
             index: 1
         - tags:
             short: t
+            long: tags
             help: Tags doc with arg-vals
+            multiple: true
             takes_value: true
   - find:
       about: Find for file path

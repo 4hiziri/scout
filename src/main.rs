@@ -37,6 +37,14 @@ impl PathEntry {
     }
 }
 
+impl PartialEq for PathEntry {
+    fn eq(&self, other: &PathEntry) -> bool {
+        self.path == other.path && self.tags == other.tags
+    }
+}
+
+impl Eq for PathEntry {}
+
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let path = self.path.to_str().unwrap_or("PathEntry: fmt error");
@@ -131,48 +139,59 @@ fn add_path(entry: PathEntry) -> Result<(), String> {
         }));
     }
 
-    let mut pathes = try!(read_path_entries(store_path));
-    debug!("{:?}", pathes);
+    let mut pathes: Vec<PathEntry> = try!(read_path_entries(store_path));
+    debug!("add_path: read_path_enties -> {:?}", pathes);
 
-    try!(match pathes.iter().find(|e| e.path == entry.path) {
-        Some(_) => Err("path exists!"),
-        None => Ok(()),
-    });
-
-    pathes.push(entry);
-
-    write_path_entries(store_path, &pathes)
+    if !pathes.iter().any(|e| e == &entry) {
+        pathes.push(entry);
+        write_path_entries(store_path, &pathes)
+    } else {
+        Err("Path exists!".to_owned())
+    }
 }
 
 fn main() {
     env_logger::init().unwrap();
 
     let yaml = load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml)
+    let app = App::from_yaml(yaml)
         .name(crate_name!())
         .version(crate_version!())
         .about(crate_description!())
-        .author(crate_authors!())
-        .get_matches();
+        .author(crate_authors!());
 
-    if let Some(matches) = matches.subcommand_matches("add") {
-        let input = matches.value_of("PATH").unwrap();
+    match app.get_matches().subcommand() {
+        ("add", Some(matches)) => {
+            let input = matches.value_of("PATH").unwrap();
 
-        // TODO: setting lifetime and modified PathEntry
-        let tags: Vec<String> = match matches.values_of("tags") {
-            Some(tag_vec_str) => tag_vec_str.map(|x| x.to_owned()).collect(),
-            None => Vec::new(),
-        };
+            // TODO: setting lifetime and modified PathEntry
+            let tags: Vec<String> = match matches.values_of("tags") {
+                Some(tag_vec_str) => tag_vec_str.map(|x| x.to_owned()).collect(),
+                None => Vec::new(),
+            };
 
-        let entry = PathEntry::new(input.to_string(), tags);
+            let entry = PathEntry::new(input.to_string(), tags);
 
-        // TODO: check whether file exists or not.
-        println!("input is {}", input);
-        println!("PathEntry: {}", entry.to_string());
+            // TODO: check whether file exists or not.
+            println!("input is {}", input);
+            println!("PathEntry: {}", entry.to_string());
 
-        match add_path(entry) {
-            Ok(_) => println!("Add path:"),
-            Err(s) => println!("Failed!: {}", s),
+            match add_path(entry) {
+                Ok(_) => println!("Success"),
+                Err(s) => println!("Failed adding path!: {}", s),
+            }
+        }
+        ("find", Some(matches)) => {
+            println!("Not impl!");
+        }
+        ("rm", Some(matches)) => {
+            println!("Not impl!");
+        }
+        ("ls", Some(matches)) => {
+            println!("Not impl!");
+        }
+        (&_, _) => {
+            println!("Not impl!");
         }
     }
 }
