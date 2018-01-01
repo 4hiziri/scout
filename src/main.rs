@@ -11,6 +11,7 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, BufReader, Write, Read};
+use std::fmt;
 
 /// scout - doc management tool
 /// # goal
@@ -33,6 +34,22 @@ impl PathEntry {
             path: PathBuf::from(path),
             tags: tags.clone(),
         }
+    }
+}
+
+impl fmt::Display for PathEntry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let path = self.path.to_str().unwrap_or("PathEntry: fmt error");
+        let mut tags_str: String = String::new();
+
+        for tag in &self.tags {
+            tags_str.push_str(&tag);
+            tags_str.push_str(",");
+        }
+
+        tags_str.pop();
+
+        write!(f, "{}: {}", path, tags_str)
     }
 }
 
@@ -141,19 +158,20 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("add") {
         let input = matches.value_of("PATH").unwrap();
 
+        // TODO: setting lifetime and modified PathEntry
+        let tags: Vec<String> = match matches.values_of("tags") {
+            Some(tag_vec_str) => tag_vec_str.map(|x| x.to_owned()).collect(),
+            None => Vec::new(),
+        };
+
+        let entry = PathEntry::new(input.to_string(), tags);
+
         // TODO: check whether file exists or not.
         println!("input is {}", input);
-
-        // TODO: tag parser
-        if matches.is_present("tags") {
-            let tags = matches.value_of("tags").unwrap_or("nothing");
-            println!("tags is {}", tags);
-        }
-
-        let entry = PathEntry::new(input.to_string(), Vec::new());
+        println!("PathEntry: {}", entry.to_string());
 
         match add_path(entry) {
-            Ok(_) => println!("Add path!"),
+            Ok(_) => println!("Add path:"),
             Err(s) => println!("Failed!: {}", s),
         }
     }
