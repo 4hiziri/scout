@@ -19,3 +19,4 @@ subcommands:
       about: Remove file path or tag
   - ls:
       about: List up infomations
+      takes_value: false

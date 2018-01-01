@@ -123,30 +123,53 @@ fn write_path_entries(dst: &Path, entries: &Vec<PathEntry>) -> Result<(), String
         })
 }
 
-fn add_path(entry: PathEntry) -> Result<(), String> {
-    // get worknig directory path
+fn get_store_file_path() -> Result<PathBuf, String> {
     let mut store_path = try!(get_store_path());
     try!(ensure_dir(store_path.as_path()));
     store_path.push("pathes.json");
 
-    let store_path = store_path.as_path(); // remove mutability
+    Ok(store_path)
+}
+
+fn add_path(entry: PathEntry) -> Result<(), String> {
+    let store_path = try!(get_store_file_path());
     debug!("{:?}", &store_path);
 
     // if store file doesn't exist, create it here.
     if !store_path.exists() {
-        try!(File::create(store_path).map_err(|_| {
+        try!(File::create(&store_path).map_err(|_| {
             "failed creating file".to_owned()
         }));
     }
 
-    let mut pathes: Vec<PathEntry> = try!(read_path_entries(store_path));
+    let mut pathes: Vec<PathEntry> = try!(read_path_entries(&store_path));
     debug!("add_path: read_path_enties -> {:?}", pathes);
 
     if !pathes.iter().any(|e| e == &entry) {
         pathes.push(entry);
-        write_path_entries(store_path, &pathes)
+        write_path_entries(&store_path, &pathes)
     } else {
         Err("Path exists!".to_owned())
+    }
+}
+
+fn list_path() -> Result<(), String> {
+    let mut store_file = try!(get_store_file_path());
+
+    if store_file.exists() {
+        let entries = read_path_entries(&store_file);
+
+        // printing entries
+        println!("{:?}", entries);
+
+        Ok(())
+    } else {
+        let file_str = match store_file.to_str() {
+            Some(s) => s,
+            None => "None",
+        };
+
+        Err(format!("{} doesn't exists!", file_str))
     }
 }
 
@@ -187,11 +210,11 @@ fn main() {
         ("rm", Some(matches)) => {
             println!("Not impl!");
         }
-        ("ls", Some(matches)) => {
-            println!("Not impl!");
+        ("ls", Some(_matches)) => {
+            list_path();
         }
         (&_, _) => {
-            println!("Not impl!");
+            println!("command missing!");
         }
     }
 }
