@@ -202,7 +202,7 @@ fn main() {
         ("add", Some(matches)) => {
             let path = PathBuf::from(matches.value_of("PATH").unwrap());
             let path = match rel_abs(&path) {
-                Ok(path) => path,
+                Ok(abspath) => if abspath.exists() { abspath } else { path },
                 Err(_) => path,
             };
 
