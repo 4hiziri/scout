@@ -157,10 +157,12 @@ fn list_path() -> Result<(), String> {
     let mut store_file = try!(get_store_file_path());
 
     if store_file.exists() {
-        let entries = read_path_entries(&store_file);
+        let entries = try!(read_path_entries(&store_file));
 
         // printing entries
-        println!("{:?}", entries);
+        for e in entries {
+            println!("{}", e);
+        }
 
         Ok(())
     } else {
