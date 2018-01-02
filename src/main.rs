@@ -154,12 +154,11 @@ fn add_path(entry: PathEntry) -> Result<(), String> {
 }
 
 fn list_path() -> Result<(), String> {
-    let mut store_file = try!(get_store_file_path());
+    let store_file = try!(get_store_file_path());
 
     if store_file.exists() {
         let entries = try!(read_path_entries(&store_file));
 
-        // printing entries
         for e in entries {
             println!("{}", e);
         }
@@ -213,7 +212,10 @@ fn main() {
             println!("Not impl!");
         }
         ("ls", Some(_matches)) => {
-            list_path();
+            match list_path() {
+                Ok(_) => (),
+                Err(s) => println!("Failed list path: {}", s),
+            }
         }
         (&_, _) => {
             println!("command missing!");
