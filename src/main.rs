@@ -29,9 +29,14 @@ struct PathEntry {
 }
 
 impl PathEntry {
-    fn new(path: String, tags: Vec<String>) -> PathEntry {
+    #[allow(dead_code)]
+    fn from_string(path: String, tags: Vec<String>) -> PathEntry {
+        PathEntry::new(PathBuf::from(path), tags)
+    }
+
+    fn new(path: PathBuf, tags: Vec<String>) -> PathEntry {
         PathEntry {
-            path: PathBuf::from(path),
+            path: path,
             tags: tags.clone(),
         }
     }
@@ -131,6 +136,15 @@ fn get_store_file_path() -> Result<PathBuf, String> {
     Ok(store_path)
 }
 
+fn rel_abs(path: &PathBuf) -> Result<PathBuf, String> {
+    env::current_dir()
+        .and_then(|mut abs_path| {
+            abs_path.push(path);
+            Ok(abs_path)
+        })
+        .map_err(|_| "can't get currend directory".to_owned())
+}
+
 fn add_path(entry: PathEntry) -> Result<(), String> {
     let store_path = try!(get_store_file_path());
     debug!("{:?}", &store_path);
@@ -186,7 +200,11 @@ fn main() {
 
     match app.get_matches().subcommand() {
         ("add", Some(matches)) => {
-            let input = matches.value_of("PATH").unwrap();
+            let path = PathBuf::from(matches.value_of("PATH").unwrap());
+            let path = match rel_abs(&path) {
+                Ok(path) => path,
+                Err(_) => path,
+            };
 
             // TODO: setting lifetime and modified PathEntry
             let tags: Vec<String> = match matches.values_of("tags") {
@@ -194,26 +212,22 @@ fn main() {
                 None => Vec::new(),
             };
 
-            let entry = PathEntry::new(input.to_string(), tags);
-
-            // TODO: check whether file exists or not.
-            println!("input is {}", input);
-            println!("PathEntry: {}", entry.to_string());
+            let entry = PathEntry::new(path, tags);
 
             match add_path(entry) {
-                Ok(_) => println!("Success"),
-                Err(s) => println!("Failed adding path!: {}", s),
+                Ok(_) => debug!("Success"),
+                Err(s) => println!("Error add: {}", s),
             }
         }
-        ("find", Some(matches)) => {
+        ("find", Some(_matches)) => {
             println!("Not impl!");
         }
-        ("rm", Some(matches)) => {
+        ("remove", Some(_matches)) => {
             println!("Not impl!");
         }
-        ("ls", Some(_matches)) => {
+        ("list", Some(_matches)) => {
             match list_path() {
-                Ok(_) => (),
+                Ok(_) => debug!("Success ls"),
                 Err(s) => println!("Failed list path: {}", s),
             }
         }
