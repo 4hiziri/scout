@@ -2,6 +2,7 @@ name: dummy
 subcommands:
   - add:
       about: Add new path
+      visible_alias: a
       args:
         - PATH:
             help: Sets path to doc
@@ -15,8 +16,13 @@ subcommands:
             takes_value: true
   - find:
       about: Find for file path
-  - rm:
+      visible_aliases:
+        - f
+        - search
+  - remove:
       about: Remove file path or tag
-  - ls:
-      about: List up infomations
+      visible_alias: rm
+  - list:      
+      about: List up infomations      
       takes_value: false
+      visible_alias: ls
