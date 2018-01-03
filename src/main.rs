@@ -145,6 +145,13 @@ fn rel_abs(path: &PathBuf) -> Result<PathBuf, String> {
         .map_err(|_| "can't get currend directory".to_owned())
 }
 
+fn abs_if_exists(path: PathBuf) -> PathBuf {
+    match rel_abs(&path) {
+        Ok(abspath) => if abspath.exists() { abspath } else { path },
+        Err(_) => path,
+    }
+}
+
 fn add_path(entry: PathEntry) -> Result<(), String> {
     let store_path = try!(get_store_file_path());
     debug!("{:?}", &store_path);
@@ -188,6 +195,21 @@ fn list_path() -> Result<(), String> {
     }
 }
 
+fn remove_path(path: PathBuf) -> Result<(), String> {
+    let store_file = try!(get_store_file_path());
+
+    if store_file.exists() {
+        let pathes: Vec<_> = try!(read_path_entries(&store_file));
+
+        write_path_entries(
+            &store_file,
+            &pathes.into_iter().filter(|x| x.path != path).collect(),
+        )
+    } else {
+        Err("File doesn't exists".to_owned())
+    }
+}
+
 fn main() {
     env_logger::init().unwrap();
 
@@ -200,11 +222,7 @@ fn main() {
 
     match app.get_matches().subcommand() {
         ("add", Some(matches)) => {
-            let path = PathBuf::from(matches.value_of("PATH").unwrap());
-            let path = match rel_abs(&path) {
-                Ok(abspath) => if abspath.exists() { abspath } else { path },
-                Err(_) => path,
-            };
+            let path = abs_if_exists(PathBuf::from(matches.value_of("PATH").unwrap()));
 
             // TODO: setting lifetime and modified PathEntry
             let tags: Vec<String> = match matches.values_of("tags") {
@@ -222,8 +240,10 @@ fn main() {
         ("find", Some(_matches)) => {
             println!("Not impl!");
         }
-        ("remove", Some(_matches)) => {
-            println!("Not impl!");
+        ("remove", Some(matches)) => {
+            let path = abs_if_exists(PathBuf::from(matches.value_of("PATH").unwrap()));
+
+            remove_path(path).unwrap();
         }
         ("list", Some(_matches)) => {
             match list_path() {
